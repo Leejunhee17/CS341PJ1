@@ -1,16 +1,14 @@
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 #include <unistd.h>
 #include <netinet/in.h>
-#include <arpa/inet.h>
+#include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-
-
-int GET(const char *str) {
+int GET(char *ip, int port, char *url) {
   int sockfd;
   struct sockaddr_in addr;
   char buf[1024];
@@ -22,37 +20,56 @@ int GET(const char *str) {
   }
   memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
-  addr.sin_port = htons(9817);
-  addr.sin_addr.s_addr = inet_addr(str);
+  addr.sin_port = htons(port);
+  addr.sin_addr.s_addr = inet_addr(ip);
 
   if(connect(sockfd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
     fprintf(stderr, "Connection Failed\n");
     return 1;
   }
+  printf("Connection Success\n");
 
-  sprintf(buf, "GET /%s\n");
+  sprintf(buf, "GET /%s HTTP/1.0\r\n", url);
   write(sockfd, buf, strlen(buf));
-  while(1) {
-    if(read(sockfd, buf, 1024) == 0) {
-      break;
-    }
-    printf("%s\n", buf);
-  }
+  read(sockfd, buf, 1024);
+  printf("%s\n", buf);
+  close(sockfd);
   return 0;
 }
 
 int main(int argc, const char *argv[]) {
+  char *ptr = malloc(sizeof(char) * strlen(argv[2]));
+  char *host;
+  struct hostent *h;
+  char *ip;
+  int port;
+  char *url;
+
   if(argc == 3) {
+    strcpy(ptr, argv[2]);
+    host = strtok(ptr, ":");
+    printf("host: %s\n", host);
+    if ((h = gethostbyname(host)) == NULL) {
+      fprintf(stderr, "Host?\n");
+      return 1;
+    }
+    ip = inet_ntoa(*((struct in_addr *)h->h_addr));
+    printf("ip: %s\n", ip);
+    port = atoi(strtok(NULL, "/"));
+    printf("port: %d\n", port);
+    url = strtok(NULL, " ");
+    printf("url: %s\n", url);
+
     if(strcmp("-G", argv[1]) == 0) {
-      printf("GET URL: %s\n", argv[2]);
-      GET(argv[2]);
+      // printf("GET\n");
+      GET(ip, port, url);
       return 0;
     }
     else if(strcmp("-P", argv[1]) == 0) {
-      printf("POST URL: %s\n", argv[2]);
+      // printf("POST\n");
       return 0;
     }
   }
-  fprintf(stderr, "plz -G URL or -P URL\n");
+  fprintf(stderr, "plz -G xxx or -P xxx\n");
   return 1;
 }
