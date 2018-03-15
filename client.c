@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int GET(char *ip, int port, char *url) {
+int GET(char *host, char *ip, int port, char *url) {
   int sockfd;
   struct sockaddr_in addr;
   char buf[1024];
@@ -29,7 +29,7 @@ int GET(char *ip, int port, char *url) {
   }
   printf("Connection Success\n");
 
-  sprintf(buf, "GET /%s HTTP/1.0\r\n", url);
+  sprintf(buf, "GET /%s HTTP/1.0\r\nHost: %s\r\n\r\n", url, host);
   write(sockfd, buf, strlen(buf));
   read(sockfd, buf, 1024);
   printf("%s\n", buf);
@@ -58,11 +58,14 @@ int main(int argc, const char *argv[]) {
     port = atoi(strtok(NULL, "/"));
     printf("port: %d\n", port);
     url = strtok(NULL, " ");
+    if(!url) {
+      url = "";
+    }
     printf("url: %s\n", url);
 
     if(strcmp("-G", argv[1]) == 0) {
       // printf("GET\n");
-      GET(ip, port, url);
+      GET(host, ip, port, url);
       return 0;
     }
     else if(strcmp("-P", argv[1]) == 0) {
