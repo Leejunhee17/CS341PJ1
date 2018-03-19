@@ -1,22 +1,14 @@
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "client.h"
 
 int GET(char *host, char *ip, int port, char *url) {
   int sockfd;
   struct sockaddr_in addr;
-  char buf[1024];
+  char buf[BUFF];
 
   sockfd = socket(AF_INET, SOCK_STREAM, 0);
   if(sockfd == -1) {
     fprintf(stderr, "Socket Failed\n");
-    return 1;
+    return -1;
   }
   memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
@@ -25,13 +17,13 @@ int GET(char *host, char *ip, int port, char *url) {
 
   if(connect(sockfd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
     fprintf(stderr, "Connection Failed\n");
-    return 1;
+    return -1;
   }
   printf("Connection Success\n");
 
   sprintf(buf, "GET /%s HTTP/1.0\r\nHost: %s\r\n\r\n", url, host);
   write(sockfd, buf, strlen(buf));
-  read(sockfd, buf, 1024);
+  read(sockfd, buf, BUFF);
   printf("%s\n", buf);
   close(sockfd);
   return 0;
@@ -51,7 +43,7 @@ int main(int argc, const char *argv[]) {
     printf("host: %s\n", host);
     if ((h = gethostbyname(host)) == NULL) {
       fprintf(stderr, "Host?\n");
-      return 1;
+      return -1;
     }
     ip = inet_ntoa(*((struct in_addr *)h->h_addr));
     printf("ip: %s\n", ip);
@@ -63,16 +55,16 @@ int main(int argc, const char *argv[]) {
     }
     printf("url: %s\n", url);
 
-    if(strcmp("-G", argv[1]) == 0) {
+    if(strcmp("-g", argv[1]) == 0) {
       // printf("GET\n");
       GET(host, ip, port, url);
       return 0;
     }
-    else if(strcmp("-P", argv[1]) == 0) {
+    else if(strcmp("-p", argv[1]) == 0) {
       // printf("POST\n");
       return 0;
     }
   }
-  fprintf(stderr, "plz -G xxx or -P xxx\n");
-  return 1;
+  fprintf(stderr, "plz -g xxx or -p xxx\n");
+  return -1;
 }
