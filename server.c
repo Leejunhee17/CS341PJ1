@@ -57,6 +57,18 @@ int main(int argc, char *argv[]) {
           }
 
           read(client_socket, buf, BUFF);
+          char *ptr;
+          ptr = strtok(buf, "/");
+          ptr = strtok(NULL, " ");
+          printf("ptr: %s\n", ptr);
+          FILE *fp = fopen(buf, "r");
+          if(fp == NULL) {
+            fgets(buf, sizeof(buf), fp);
+            printf("%s\n", buf);
+          } else {
+              fprintf(stderr, "There is no %s in server\n", ptr);
+          }
+          fclose(fp);
 
           close(client_socket);
         }
